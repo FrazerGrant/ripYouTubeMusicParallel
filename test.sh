@@ -14,39 +14,34 @@ convertToAudio(){
     echo -e "\nFinished $1\n"
 }
 
-for item in $urls
-  do
+for item in $urls; do
     youtube-dl -x "https://www.youtube.com/watch?v=$item" 
     filename=$(ls | grep "$item")
-        if [ $(jobs | wc -l) -lt 4 ]
-            then
-                touch "$filename".lock
-                convertToAudio "$filename" &
-        fi
-  done  
+    if [ $(jobs | wc -l) -lt 4 ]; then
+        touch "$filename".lock
+        convertToAudio "$filename" &
+    fi
+done
 
 Files=(*.opus)
 
-for ((i = 0; i < ${#Files[@]}; i++)) 
-    do  
-        if [ ! -f "${Files[$i]}.lock" ]
-            then
-                while [ $(jobs | wc -l) -gt 3 ]
-                do  
-                    echo -e "\n waiting free slot"
-                    sleep 1
-                done
-                echo "Locking file "${Files[$i]}" at index $i"
-                touch "${Files[$i]}".lock
-                convertToAudio "${Files[$i]}" &
-        fi
-    done
+for ((i = 0; i < ${#Files[@]}; i++)); do  
+    if [ ! -f "${Files[$i]}.lock" ]; then
+        while [ $(jobs | wc -l) -gt 3 ]; do  
+            echo -e "\n waiting free slot"
+            sleep 1
+        done
+
+        echo "Locking file "${Files[$i]}" at index $i"
+        touch "${Files[$i]}".lock
+        convertToAudio "${Files[$i]}" &
+    fi
+done
 
 
 
 while [ $(jobs | wc -l) -gt 0 ]
-do  
-
+do
     jobs
     sleep 1
 done
