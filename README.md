@@ -4,10 +4,7 @@ Uses multiple threads to radically improving performance!
 
 Requirements:
 
-python3
-
-pip3
-
-youtube-dl
-
-GNU parallel
+<p>python3</p>
+<p>pip3</p>
+<p>youtube-dl</p>
+<p>GNU parallel</p>
