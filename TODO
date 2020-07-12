@@ -1,0 +1,5 @@
+Move converted mp3s to a folder of either the playlist name or for an individual file to a ripmusic folder
+Add a parameter for how many simultaneous processing of music files.  This will depend upon how many CPU cores you have.
+Add a timing at the completion to say how many files were ripped and how long it took
+Show what outstanding file being processed
+Experiment with ffmpeg audio settings
