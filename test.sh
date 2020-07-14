@@ -31,8 +31,6 @@ for ((i = 0; i < ${#Files[@]}; i++)); do
             echo -e "\n waiting free slot"
             sleep 1
         done
-
-        echo "Locking file "${Files[$i]}" at index $i"
         touch "${Files[$i]}".lock
         convertToAudio "${Files[$i]}" &
     fi
