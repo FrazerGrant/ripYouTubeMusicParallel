@@ -1,13 +1,18 @@
 #!/bin/bash
-destDir=$PWD/output
+# ./test.sh "https://www.youtube.com/watch?v=aeaJnsxCzM0&list=OLAK5uy_npTt7HM576BH0MkZ0nf4kTUT73QWcC4Xg&index=4"
+
+startTime=$(date +%s)
+destDir=$HOME/ripYouTubeMusic/rippedMusic
+mkdir $destDir
 
 sessionuuid=$(head -c 16 /dev/urandom | base32) # Create a random string to use to avoid collisions.
-mkdir /tmp/$sessionuuid
-cd /tmp/$sessionuuid
+tempDir="/tmp/$sessionuuid"
+mkdir  $tempDir
+cd $tempDir
 
-urls=$(youtube-dl --get-id -i $1) # Get the id's of all the youtube videos in the playlist. Also ignore errors caused by videos that are not available (-i).
+#urls=$(youtube-dl --get-id -i $1) # Get the id's of all the youtube videos in the playlist. Also ignore errors caused by videos that are not available (-i).
 
-echo $urls
+#echo $urls
 
 # This converts the opus file specified in the first parameter to mp3. This is intended to be run in the background
 convertToAudio(){
@@ -25,35 +30,42 @@ convertToAudio(){
 }
 
 # Download the audio of each video and start the conversion process if there are not too many running.
-for item in $urls; do
+#for item in $urls; do
     # Download audio
-    youtube-dl -x "https://www.youtube.com/watch?v=$item"
+#    youtube-dl -x "https://www.youtube.com/watch?v=$item"
     # Find the file that was just downloaded. Youtube-dl includes the video in the filename. It is unlikely that a video will have another video's id in it's name but this could be an issue. We do this to avoid having to request the name from youtube to minimize the number of api requests.
-    filename=$(ls | grep "$item")
+#    filename=$(ls | grep "$item")
     # Run conversion only if less than the max are currently running.
-    if [ $(jobs | wc -l) -lt 4 ]; then
+#    if [ $(jobs | wc -l) -lt 4 ]; then
         # Create lock file to make sure that the file is not converted twice
-        touch "$filename".lock
-        convertToAudio "$filename" &
-    fi
-done
+#        touch "$filename".lock
+#        convertToAudio "$filename" &
+#    fi
+#done
 
 
 # Create an array of all files that end with .opus
+
+youtube-dl -x -o '%(playlist_title)s/%(title)s-%(id)s.%(ext)s' $1
+
+album=$(cd $tempDir | ls -td -- */ | head -n 1 | cut -d'/' -f1)
+echo $album
+convertedAlbum="$tempDir"/"$album"
+echo $convertedAlbum
+cd "$convertedAlbum"
 Files=(*.opus)
 
-# NOTE: We cannot use "for ... in ..." because the array items contain strings and therefore it would split each item into multiple items across the spaces.
-# ${#Files[@]} = Number of items in the array Files
+
+
 for ((i = 0; i < ${#Files[@]}; i++)); do
     # If the file does not have a lock file associated with it
     if [ ! -f "${Files[$i]}.lock" ]; then
         # Wait for the number of currently running conversions to fall below the max
-        while [ $(jobs | wc -l) -gt 3 ]; do  
+        while [ $(jobs | wc -l) -gt 4 ]; do  
             echo -e "\n waiting free slot"
             sleep 1
-        done
-        # Lock the file and run the conversion. NOTE: Lock not needed here because the ones that aren't done are saved in the array. We lock the file anyway just in case a future feature in the future requires it.
-        touch "${Files[$i]}".lock
+        done       
+        #touch "${Files[$i]}".lock
         convertToAudio "${Files[$i]}" &
     fi
 done
@@ -65,6 +77,19 @@ do
     jobs
     sleep 1
 done
+
+rm "$convertedAlbum"/*.opus
+#destConvertedAlbum="$destDir/$album"
+#echo destConvertedAlbum
+#mkdir "$destConvertedAlbum"
+cp -vr "$convertedAlbum" $destDir
+
+
+endTime=$(date +%s)
+totalSeconds=$(($endTime-$startTime))
+Minutes=$(( totalSeconds / 60 ))
+Seconds=$(( totalSeconds % 60 ))
+echo "Converted in $Minutes: Minutes $Seconds: Seconds"
 
 
 echo "process loop done"
