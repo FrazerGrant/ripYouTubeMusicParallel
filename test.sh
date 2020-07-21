@@ -49,9 +49,7 @@ convertToAudio(){
 youtube-dl -x -o '%(playlist_title)s/%(title)s-%(id)s.%(ext)s' $1
 
 album=$(cd $tempDir | ls -td -- */ | head -n 1 | cut -d'/' -f1)
-echo $album
 convertedAlbum="$tempDir"/"$album"
-echo $convertedAlbum
 cd "$convertedAlbum"
 Files=(*.opus)
 
@@ -79,10 +77,7 @@ do
 done
 
 rm "$convertedAlbum"/*.opus
-#destConvertedAlbum="$destDir/$album"
-#echo destConvertedAlbum
-#mkdir "$destConvertedAlbum"
-cp -vr "$convertedAlbum" $destDir
+cp -r "$convertedAlbum" $destDir
 
 
 endTime=$(date +%s)
