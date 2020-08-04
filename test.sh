@@ -5,16 +5,14 @@ startTime=$(date +%s)
 destDir=$HOME/ripYouTubeMusic/rippedMusic
 mkdir $destDir
 
-sessionuuid=$(head -c 16 /dev/urandom | base32) # Create a random string to use to avoid collisions.
+# Create a random string.
+sessionuuid=$(head -c 16 /dev/urandom | base32) 
+
 tempDir="/tmp/$sessionuuid"
 mkdir  $tempDir
 cd $tempDir
 
-#urls=$(youtube-dl --get-id -i $1) # Get the id's of all the youtube videos in the playlist. Also ignore errors caused by videos that are not available (-i).
-
-#echo $urls
-
-# This converts the opus file specified in the first parameter to mp3. This is intended to be run in the background
+# This converts the opus file to mp3.
 convertToAudio(){
     echo  -e "\nConverting $1\n"
 
@@ -44,40 +42,32 @@ convertToAudio(){
 #done
 
 
-# Create an array of all files that end with .opus
-
-youtube-dl -x -o '%(playlist_title)s/%(title)s-%(id)s.%(ext)s' $1
+youtube-dl -x -o '%(playlist_title)s/%(title)s.%(ext)s' $1
 
 album=$(cd $tempDir | ls -td -- */ | head -n 1 | cut -d'/' -f1)
 convertedAlbum="$tempDir"/"$album"
 cd "$convertedAlbum"
+# Create an array of all files that end with .opus
 Files=(*.opus)
 
-
-
 for ((i = 0; i < ${#Files[@]}; i++)); do
-    # If the file does not have a lock file associated with it
-    if [ ! -f "${Files[$i]}.lock" ]; then
         # Wait for the number of currently running conversions to fall below the max
-        while [ $(jobs | wc -l) -gt 4 ]; do  
+        while [ $(jobs | wc -l) -gt 5 ]; do  
             echo -e "\n waiting free slot"
             sleep 1
         done       
-        #touch "${Files[$i]}".lock
         convertToAudio "${Files[$i]}" &
-    fi
 done
 
 
 # Wait for all conversions to finish.
-while [ $(jobs | wc -l) -gt 0 ]
+while [ $(jobs | wc -l) -gt 1 ]
 do
-    jobs
     sleep 1
 done
 
 rm "$convertedAlbum"/*.opus
-cp -r "$convertedAlbum" $destDir
+mv $tempDir/* $destDir
 
 
 endTime=$(date +%s)
@@ -85,6 +75,3 @@ totalSeconds=$(($endTime-$startTime))
 Minutes=$(( totalSeconds / 60 ))
 Seconds=$(( totalSeconds % 60 ))
 echo "Converted in $Minutes: Minutes $Seconds: Seconds"
-
-
-echo "process loop done"
